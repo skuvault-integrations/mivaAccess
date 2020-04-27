@@ -10,7 +10,7 @@ namespace MivaAccess.Shared
 	public class MivaLogger
 	{
 		private static readonly string _versionInfo;
-		private const string mivaMark = "Miva";
+		private const string integrationName = "Miva";
 		private const int MaxLogLineSize = 0xA00000; //10mb
 
 		static MivaLogger()
@@ -26,7 +26,7 @@ namespace MivaAccess.Shared
 
 		public static void LogTraceException( Exception exception )
 		{
-			Log().Error( exception, "{channel} An exception occured. [ver:{version}]", mivaMark, _versionInfo );
+			Log().Error( exception, "{channel} An exception occured. [ver:{version}]", integrationName, _versionInfo );
 		}
 
 		public static void LogTraceStarted( string info )
@@ -74,7 +74,7 @@ namespace MivaAccess.Shared
 		{
 			if( info.Length < MaxLogLineSize )
 			{
-				Log().Trace( "[{channel}] {type}:{info}, [ver:{version}]", mivaMark, type, info, _versionInfo );
+				Log().Trace( "[{channel}] {type}:{info}, [ver:{version}]", integrationName, type, info, _versionInfo );
 				return;
 			}
 
@@ -82,7 +82,7 @@ namespace MivaAccess.Shared
 			var pageId = Guid.NewGuid();
 			foreach( var page in SplitString( info, MaxLogLineSize ) )
 			{
-				Log().Trace( "[{channel}] page:{page} pageId:{pageId} {type}:{info}, [ver:{version}]", mivaMark, pageNumber++, pageId, type, page, _versionInfo );
+				Log().Trace( "[{channel}] page:{page} pageId:{pageId} {type}:{info}, [ver:{version}]", integrationName, pageNumber++, pageId, type, page, _versionInfo );
 			}
 		}
 

@@ -6,10 +6,12 @@ using MivaAccess.Models.Infrastructure;
 using MivaAccess.Shared;
 using MivaAccess.Throttling;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -47,7 +49,7 @@ namespace MivaAccess.Services
 			};
 		}
 
-		protected async Task< T > GetAsync< T >( MivaCommand command, CancellationToken cancellationToken, Mark mark = null )
+		protected async Task< T > GetAsync< T >( MivaCommand command, CancellationToken cancellationToken, Mark mark = null, [ CallerMemberName ] string methodName = "" )
 		{
 			if ( mark == null )
 				mark = Mark.CreateNew();
@@ -58,7 +60,7 @@ namespace MivaAccess.Services
 				throw new MivaException( string.Format( "{0}. Task was cancelled", exceptionDetails ) );
 			}
 
-			var responseContent = await this.ThrottleRequestAsync( command, mark, async ( token ) =>
+			var responseContent = await this.ThrottleRequestAsync( command, mark, methodName, HttpMethod.Get, async ( token ) =>
 			{
 				this.SetAuthHeader( command );
 				var httpResponse = await HttpClient.GetAsync( command.Url ).ConfigureAwait( false );
@@ -74,7 +76,7 @@ namespace MivaAccess.Services
 			return response;
 		}
 
-		protected async Task< T > PostAsync< T >( MivaCommand command, CancellationToken cancellationToken, Mark mark = null )
+		protected async Task< T > PostAsync< T >( MivaCommand command, CancellationToken cancellationToken, Mark mark = null, [ CallerMemberName ] string methodName = "" )
 		{
 			if ( mark == null )
 				mark = Mark.CreateNew();
@@ -85,10 +87,10 @@ namespace MivaAccess.Services
 				throw new MivaException( string.Format( "{0}. Task was cancelled", exceptionDetails ) );
 			}
 
-			var responseContent = await this.ThrottleRequestAsync( command, mark, async ( token ) =>
+			var responseContent = await this.ThrottleRequestAsync( command, mark, methodName, HttpMethod.Post, async ( token ) =>
 			{
 				this.SetAuthHeader( command );
-				var payload = new StringContent( command.Payload, Encoding.UTF8, "application/json" );
+				var payload = new StringContent( command.Payload.ToJson(), Encoding.UTF8, "application/json" );
 				payload.Headers.ContentType = MediaTypeHeaderValue.Parse( "application/json" );
 				var httpResponse = await HttpClient.PostAsync( command.Url, payload ).ConfigureAwait( false );
 				var content = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait( false );
@@ -106,7 +108,7 @@ namespace MivaAccess.Services
 		private void SetAuthHeader( MivaCommand command )
 		{
 			this.HttpClient.DefaultRequestHeaders.Remove( _authorizationHeaderName );
-			var headerValue = new Authenticator( this.Config.Credentials ).GetAuthorizationHeaderValue( command.Payload );
+			var headerValue = new Authenticator( this.Config.Credentials ).GetAuthorizationHeaderValue( command.Payload.ToJson() );
 			this.HttpClient.DefaultRequestHeaders.Add( _authorizationHeaderName, headerValue );
 		}
 
@@ -117,19 +119,20 @@ namespace MivaAccess.Services
 				throw new MivaUnauthorizedException( message );
 			}
 
+			MivaErrorResponse error = null;
 			try
 			{
-				var error = JsonConvert.DeserializeObject< MivaErrorResponse >( message );
-				
-				if ( error != null && error.Success == 0 )
-				{
-					throw new MivaException( error.ErrorMessage ) {  ErrorCode = error.ErrorCode };
-				}
+				error = JsonConvert.DeserializeObject< MivaErrorResponse >( message );
 			}
 			catch { }
+				
+			if ( error != null && error.Success == 0 )
+			{
+				throw new MivaException( error.ErrorMessage ) {  ErrorCode = error.ErrorCode };
+			}
 		}
 
-		private Task< T > ThrottleRequestAsync< T >( MivaCommand command, Mark mark, Func< CancellationToken, Task< T > > processor, CancellationToken token )
+		private Task< T > ThrottleRequestAsync< T >( MivaCommand command, Mark mark, string methodName, HttpMethod methodType, Func< CancellationToken, Task< T > > processor, CancellationToken token )
 		{
 			return Throttler.ExecuteAsync( () =>
 			{
@@ -140,47 +143,46 @@ namespace MivaAccess.Services
 
 						using( var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource( token ) )
 						{
-							MivaLogger.LogStarted( this.CreateMethodCallInfo( command.Url, mark, payload: command.Payload, additionalInfo: this.AdditionalLogInfo() ) );
+							MivaLogger.LogStarted( this.CreateMethodCallInfo( command.Url, mark, methodType, payload: command.Payload, additionalInfo: this.AdditionalLogInfo(), libMethodName: methodName ) );
 							linkedTokenSource.CancelAfter( Config.NetworkOptions.RequestTimeoutMs );
 
 							var result = await processor( linkedTokenSource.Token ).ConfigureAwait( false );
 
-							MivaLogger.LogEnd( this.CreateMethodCallInfo( command.Url, mark, methodResult: result.ToJson(), additionalInfo: this.AdditionalLogInfo() ) );
+							MivaLogger.LogEnd( this.CreateMethodCallInfo( command.Url, mark, methodType, payload: command.Payload, responseBodyRaw: result.ToString(), additionalInfo: this.AdditionalLogInfo(), libMethodName: methodName ) );
 
 							return result;
 						}
 					}, 
 					( exception, timeSpan, retryCount ) =>
 					{
-						string retryDetails = this.CreateMethodCallInfo( command.Url, mark, additionalInfo: this.AdditionalLogInfo() );
+						string retryDetails = this.CreateMethodCallInfo( command.Url, mark, additionalInfo: this.AdditionalLogInfo(), libMethodName: methodName );
 						MivaLogger.LogTraceRetryStarted( timeSpan.Seconds, retryCount, retryDetails );
 					},
-					() => CreateMethodCallInfo( command.Url, mark, additionalInfo: this.AdditionalLogInfo() ),
+					( ex ) => CreateMethodCallInfo( command.Url, mark, methodType, payload: command.Payload, additionalInfo: this.AdditionalLogInfo(), libMethodName: methodName, errors: ex.Message ),
 					MivaLogger.LogTraceException );
 			} );
 		}
 
-		protected string CreateMethodCallInfo( string url = "", Mark mark = null, string errors = "", string methodResult = "", string additionalInfo = "", string payload = "" )
+		protected string CreateMethodCallInfo( string url = null, Mark mark = null, HttpMethod methodType = null, string errors = null, string responseBodyRaw = null, string additionalInfo = null, object payload = null, string libMethodName = null )
 		{
-			string serviceEndPoint = null;
-
-			if ( !string.IsNullOrEmpty( url ) )
+			JObject responseBody = null;
+			try
 			{
-				Uri uri = new Uri( url );
-
-				serviceEndPoint = uri.LocalPath;
+				responseBody = JObject.Parse( responseBodyRaw );
 			}
+			catch { }
 
-			var str = string.Format(
-				"{{Mark: '{0}', ServiceEndPoint: '{1}' {2} {3}{4}{5}}}",
-				mark ?? Mark.Blank(),
-				string.IsNullOrWhiteSpace( serviceEndPoint ) ? string.Empty : serviceEndPoint,
-				string.IsNullOrWhiteSpace( errors ) ? string.Empty : ", Errors: " + errors,
-				string.IsNullOrWhiteSpace( methodResult ) ? string.Empty : ", Result: " + methodResult,
-				string.IsNullOrWhiteSpace( additionalInfo ) ? string.Empty : ", AdditionalInfo: " + additionalInfo,
-				string.IsNullOrWhiteSpace( payload ) ? string.Empty : ", Body: " + payload
-			);
-			return str;
+			return new CallInfo()
+			{
+				Mark = mark?.ToString() ?? "Unknown",
+				Endpoint = url,
+				Method = methodType?.ToString() ?? "Uknown",
+				Body = payload,
+				LibMethodName = libMethodName,
+				AdditionalInfo = additionalInfo,
+				Response = (object)responseBody ?? responseBodyRaw,
+				Errors = errors
+			}.ToJson();
 		}
 	}
 }

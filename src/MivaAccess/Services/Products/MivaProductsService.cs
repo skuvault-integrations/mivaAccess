@@ -31,11 +31,16 @@ namespace MivaAccess.Services.Products
 			}
 
 			var request = new GetModifiedProductsRequestBody( base.Config.Credentials, lastModifiedDateUtc );
-			var command = new MivaCommand( base.Config, request.ToJson() );
+			var command = new MivaCommand( base.Config, request );
 
 			var response = await base.PostAsync< IEnumerable< Product > >( command, token, mark ).ConfigureAwait( false );
 
-			return response.Select( r => r.ToSVProduct() );
+			if ( response != null )
+			{
+				return response.Select( r => r.ToSVProduct() );
+			}
+
+			return Array.Empty< MivaProduct >();
 		}
 	}
 }

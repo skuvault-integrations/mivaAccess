@@ -33,7 +33,7 @@ namespace MivaAccess.Throttling
 		/// <param name="extraLogInfo"></param>
 		/// <param name="onException"></param>
 		/// <returns></returns>
-		public Task< TResult > ExecuteAsync< TResult >( Func< Task< TResult > > funcToThrottle, Action< Exception, TimeSpan, int > onRetryAttempt, Func< string > extraLogInfo, Action< Exception > onException )
+		public Task< TResult > ExecuteAsync< TResult >( Func< Task< TResult > > funcToThrottle, Action< Exception, TimeSpan, int > onRetryAttempt, Func< Exception, string > extraLogInfo, Action< Exception > onException )
 		{
 			return Policy.Handle< MivaNetworkException >()
 				.WaitAndRetryAsync( _retryAttempts,
@@ -54,7 +54,7 @@ namespace MivaAccess.Throttling
 						var exceptionDetails = string.Empty;
 
 						if ( extraLogInfo != null )
-							exceptionDetails = extraLogInfo();
+							exceptionDetails = extraLogInfo( exception );
 
 						if ( exception is HttpRequestException )
 							mivaException = new MivaNetworkException( exceptionDetails, exception );
