@@ -139,8 +139,6 @@ namespace MivaAccess.Services
 				return new ActionPolicy( Config.NetworkOptions.RetryAttempts, Config.NetworkOptions.DelayBetweenFailedRequestsInSec, Config.NetworkOptions.DelayFailRequestRate )
 					.ExecuteAsync( async () =>
 					{
-						Misc.InitSecurityProtocol();
-
 						using( var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource( token ) )
 						{
 							MivaLogger.LogStarted( this.CreateMethodCallInfo( command.Url, mark, methodType, payload: command.Payload, additionalInfo: this.AdditionalLogInfo(), libMethodName: methodName ) );

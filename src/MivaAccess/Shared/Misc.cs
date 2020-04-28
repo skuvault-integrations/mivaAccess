@@ -34,10 +34,5 @@ namespace MivaAccess.Shared
 		{
 			return ( int )( date - new DateTime( 1970, 1, 1 ) ).TotalSeconds;
 		}
-
-		public static void InitSecurityProtocol()
-		{
-			ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12 | SecurityProtocolType.Ssl3;
-		}
 	}
 }

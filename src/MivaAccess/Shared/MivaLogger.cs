@@ -26,7 +26,7 @@ namespace MivaAccess.Shared
 
 		public static void LogTraceException( Exception exception )
 		{
-			Log().Error( exception, "{channel} An exception occured. [ver:{version}]", integrationName, _versionInfo );
+			Log().Error( exception, "[{channel}] [ver:{version}] An exception occured. ", integrationName, _versionInfo );
 		}
 
 		public static void LogTraceStarted( string info )
@@ -74,7 +74,7 @@ namespace MivaAccess.Shared
 		{
 			if( info.Length < MaxLogLineSize )
 			{
-				Log().Trace( "[{channel}] {type}:{info}, [ver:{version}]", integrationName, type, info, _versionInfo );
+				Log().Trace( "[{type}] [{channel}] [ver:{version}] {info}", type, integrationName, _versionInfo, info );
 				return;
 			}
 
@@ -82,7 +82,7 @@ namespace MivaAccess.Shared
 			var pageId = Guid.NewGuid();
 			foreach( var page in SplitString( info, MaxLogLineSize ) )
 			{
-				Log().Trace( "[{channel}] page:{page} pageId:{pageId} {type}:{info}, [ver:{version}]", integrationName, pageNumber++, pageId, type, page, _versionInfo );
+				Log().Trace( "[{type}] [{channel}] [ver:{version}] page:{page} pageId:{pageId} {info}", type, integrationName, _versionInfo, pageNumber++, pageId, page );
 			}
 		}
 
