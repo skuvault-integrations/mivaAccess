@@ -54,12 +54,6 @@ namespace MivaAccess.Services
 			if ( mark == null )
 				mark = Mark.CreateNew();
 
-			if ( cancellationToken.IsCancellationRequested )
-			{
-				var exceptionDetails = this.CreateMethodCallInfo( command.Url, mark, additionalInfo: this.AdditionalLogInfo() );
-				throw new MivaException( string.Format( "{0}. Task was cancelled", exceptionDetails ) );
-			}
-
 			var responseContent = await this.ThrottleRequestAsync( command, mark, methodName, HttpMethod.Get, async ( token ) =>
 			{
 				this.SetAuthHeader( command );
@@ -76,16 +70,15 @@ namespace MivaAccess.Services
 			return response;
 		}
 
+		protected Task< T > PostAsync< T >( MivaRequest request, CancellationToken cancellationToken, Mark mark = null, [ CallerMemberName ] string methodName = "" )
+		{
+			return this.PostAsync< T >( new MivaCommand( this.Config, request ), cancellationToken, mark, methodName );
+		}
+
 		protected async Task< T > PostAsync< T >( MivaCommand command, CancellationToken cancellationToken, Mark mark = null, [ CallerMemberName ] string methodName = "" )
 		{
 			if ( mark == null )
 				mark = Mark.CreateNew();
-
-			if ( cancellationToken.IsCancellationRequested )
-			{
-				var exceptionDetails = this.CreateMethodCallInfo( command.Url, mark, additionalInfo: this.AdditionalLogInfo() );
-				throw new MivaException( string.Format( "{0}. Task was cancelled", exceptionDetails ) );
-			}
 
 			var responseContent = await this.ThrottleRequestAsync( command, mark, methodName, HttpMethod.Post, async ( token ) =>
 			{
@@ -100,9 +93,9 @@ namespace MivaAccess.Services
 				return content;
 			}, cancellationToken ).ConfigureAwait( false );
 
-			var response = JsonConvert.DeserializeObject< MivaResponse< T > >( responseContent );
+			var response = JsonConvert.DeserializeObject< T >( responseContent );
 
-			return response.Data.Data;
+			return response;
 		}
 
 		private void SetAuthHeader( MivaCommand command )
@@ -118,17 +111,9 @@ namespace MivaAccess.Services
 			{
 				throw new MivaUnauthorizedException( message );
 			}
-
-			MivaErrorResponse error = null;
-			try
+			else if ( !response.IsSuccessStatusCode )
 			{
-				error = JsonConvert.DeserializeObject< MivaErrorResponse >( message );
-			}
-			catch { }
-				
-			if ( error != null && error.Success == 0 )
-			{
-				throw new MivaException( error.ErrorMessage ) {  ErrorCode = error.ErrorCode };
+				throw new MivaException( message );
 			}
 		}
 

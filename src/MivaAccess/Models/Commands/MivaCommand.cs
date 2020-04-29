@@ -7,10 +7,10 @@ namespace MivaAccess.Models.Commands
 	public class MivaCommand
 	{
 		public MivaConfig Config { get; private set; }
-		public MivaRequestBody Payload { get; private set; }
+		public MivaRequest Payload { get; private set; }
 		public string Url { get; private set; }
 
-		public MivaCommand( MivaConfig config, MivaRequestBody payload )
+		public MivaCommand( MivaConfig config, MivaRequest payload )
 		{
 			Condition.Requires( config, "config" ).IsNotNull();
 			Condition.Requires( payload, "payload" ).IsNotNull();

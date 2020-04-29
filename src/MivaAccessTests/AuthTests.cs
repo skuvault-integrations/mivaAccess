@@ -13,7 +13,7 @@ namespace MivaAccessTests
 		public void GenerateAuthHeaderValue()
 		{
 			var authenticator = new Authenticator( base.Config.Credentials );
-			var requestBody = new GetModifiedProductsRequestBody( base.Config.Credentials, DateTime.UtcNow.AddMonths( -1 ) );
+			var requestBody = new GetModifiedProductsRequest( base.Config.Credentials, DateTime.UtcNow.AddMonths( -1 ) );
 
 			var headerValue = authenticator.GetAuthorizationHeaderValue( requestBody.ToJson() );
 

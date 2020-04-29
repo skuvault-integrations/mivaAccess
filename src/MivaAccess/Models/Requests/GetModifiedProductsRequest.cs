@@ -5,9 +5,9 @@ using System;
 
 namespace MivaAccess.Models.Requests
 {
-	public class GetModifiedProductsRequestBody : MivaRequestBody
+	public class GetModifiedProductsRequest : MivaQuery
 	{
-		public GetModifiedProductsRequestBody( MivaCredentials credentials, DateTime lastMofiedDateUtc ) : base( credentials, "ProductList_Load_Query" )
+		public GetModifiedProductsRequest( MivaCredentials credentials, DateTime lastMofiedDateUtc ) : base( credentials, "ProductList_Load_Query" )
 		{
 			this.Filters = new MivaRequestFilter[]
 			{

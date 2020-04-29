@@ -1,21 +1,12 @@
 ﻿using CuttingEdge.Conditions;
 using MivaAccess.Configuration;
-using MivaAccess.Shared;
 using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace MivaAccess.Models.Infrastructure
 {
-	public abstract class MivaRequestBody
+	public abstract class MivaQuery : MivaRequest
 	{
-		[ JsonProperty( "Store_Code" ) ]
-		public string StoreCode { get; private set; }
-
-		[ JsonProperty( "Function" ) ]
-		public string FunctionName { get; private set; }
-
 		[ JsonProperty( "Count" ) ]
 		public int Count { get; private set; }
 
@@ -25,18 +16,8 @@ namespace MivaAccess.Models.Infrastructure
 		[ JsonProperty( "Filter" ) ]
 		public IEnumerable< MivaRequestFilter > Filters { get; set; }
 
-		[ JsonProperty( "Miva_Request_Timestamp" ) ]
-		public int Timestamp { get; private set; }
-
-		public MivaRequestBody( MivaCredentials credentials, string functionName )
+		public MivaQuery( MivaCredentials credentials, string functionName ) : base( credentials, functionName )
 		{
-			Condition.Requires( credentials, "credentials" ).IsNotNull();
-			Condition.Requires( functionName, "functionName" ).IsNotNullOrEmpty();
-
-			this.StoreCode = credentials.StoreCode;
-			this.FunctionName = functionName;
-			
-			UpdateTimestamp();
 		}
 
 		public void SetPage( int page, int pageSize )
@@ -48,11 +29,6 @@ namespace MivaAccess.Models.Infrastructure
 			this.Offset = pageSize * page;
 			
 			UpdateTimestamp();
-		}
-
-		private void UpdateTimestamp()
-		{
-			this.Timestamp = DateTime.UtcNow.FromUtcTimeToEpoch();
 		}
 	}
 

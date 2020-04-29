@@ -8,6 +8,7 @@ using MivaAccess.Configuration;
 using MivaAccess.Exceptions;
 using MivaAccess.Models;
 using MivaAccess.Models.Commands;
+using MivaAccess.Models.Infrastructure;
 using MivaAccess.Models.Requests;
 using MivaAccess.Shared;
 
@@ -19,9 +20,17 @@ namespace MivaAccess.Services.Products
 		{
 		}
 
-		public async Task< IEnumerable< MivaProduct > > GetProductsCreatedOrUpdatedAfterAsync( DateTime lastModifiedDateUtc, CancellationToken token )
+		/// <summary>
+		///	List all products that were modified since the specified date
+		/// </summary>
+		/// <param name="lastModifiedDateUtc"></param>
+		/// <param name="token"></param>
+		/// <param name="mark"></param>
+		/// <returns></returns>
+		public async Task< IEnumerable< MivaProduct > > GetProductsCreatedOrUpdatedAfterAsync( DateTime lastModifiedDateUtc, CancellationToken token, Mark mark = null )
 		{
-			var mark = Mark.CreateNew();
+			if ( mark == null )
+				mark = Mark.CreateNew();
 
 			if ( token.IsCancellationRequested )
 			{
@@ -30,17 +39,120 @@ namespace MivaAccess.Services.Products
 				MivaLogger.LogTraceException( mivaException );
 			}
 
-			var request = new GetModifiedProductsRequestBody( base.Config.Credentials, lastModifiedDateUtc );
-			var command = new MivaCommand( base.Config, request );
+			var request = new GetModifiedProductsRequest( base.Config.Credentials, lastModifiedDateUtc );
+			var response = await base.PostAsync< MivaDataResponse < IEnumerable< Product > > >( request, token, mark ).ConfigureAwait( false );
 
-			var response = await base.PostAsync< IEnumerable< Product > >( command, token, mark ).ConfigureAwait( false );
-
-			if ( response != null )
+			if ( response.Success == 0 )
 			{
-				return response.Select( r => r.ToSVProduct() );
+				throw new MivaException( response.ErrorMessage, response.ErrorCode );
+			}
+
+			if ( response.Data?.Data != null )
+			{
+				return response.Data.Data.Select( r => r.ToSVProduct() );
 			}
 
 			return Array.Empty< MivaProduct >();
+		}
+
+		/// <summary>
+		///	Find product by sku
+		/// </summary>
+		/// <param name="sku"></param>
+		/// <param name="token"></param>
+		/// <param name="mark"></param>
+		/// <returns></returns>
+		public async Task< IEnumerable< MivaProduct > > FindProductBySku( string sku, CancellationToken token, Mark mark = null )
+		{
+			if ( mark == null )
+				mark = Mark.CreateNew();
+
+			if ( token.IsCancellationRequested )
+			{
+				var exceptionDetails = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() );
+				var mivaException = new MivaException( string.Format( "{0}. Find product by sku request was cancelled", exceptionDetails ) );
+				MivaLogger.LogTraceException( mivaException );
+			}
+
+			var request = new FindProductBySkuRequest( base.Config.Credentials, sku );
+			var response = await base.PostAsync< MivaDataResponse < IEnumerable< Product > > >( request, token, mark ).ConfigureAwait( false );
+
+			if ( response.Data?.Data != null )
+			{
+				return response.Data.Data.Select( r => r.ToSVProduct() );
+			}
+
+			return Array.Empty< MivaProduct >();
+		}
+
+		/// <summary>
+		///	Update product's quantity using sku
+		/// </summary>
+		/// <param name="sku"></param>
+		/// <param name="quantity"></param>
+		/// <param name="token"></param>
+		/// <param name="mark"></param>
+		/// <returns></returns>
+		public async Task UpdateProductQuantityBySkuAsync( string sku, int quantity, CancellationToken token, Mark mark = null )
+		{
+			if ( mark == null )
+				mark = Mark.CreateNew();
+
+			if ( token.IsCancellationRequested )
+			{
+				var exceptionDetails = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() );
+				var mivaException = new MivaException( string.Format( "{0}. Update product's sku quantity request was cancelled", exceptionDetails ) );
+				MivaLogger.LogTraceException( mivaException );
+			}
+
+			var request = new UpdateProductInventoryRequest( base.Config.Credentials, sku, quantity );
+			var response = await base.PostAsync< MivaResponse >( request, token, mark ).ConfigureAwait( false );
+
+			if ( response.Success == 0 )
+			{
+				MivaLogger.LogTrace( new MivaException( response.ErrorMessage, response.ErrorCode ), string.Format( "Failed to update product's quantity! Sku: {0}, New quantity: {1}", sku, quantity ) );
+				return;
+			}
+		}
+
+		/// <summary>
+		///	Update products quantities via batch request
+		/// </summary>
+		/// <param name="skusQuantities"></param>
+		/// <param name="token"></param>
+		/// <param name="mark"></param>
+		/// <returns></returns>
+		public async Task UpdateProductsQuantitiesBySkuAsync( Dictionary< string, int > skusQuantities, CancellationToken token, Mark mark = null )
+		{
+			if ( skusQuantities == null || !skusQuantities.Any() )
+				return;
+
+			if ( mark == null )
+				mark = Mark.CreateNew();
+
+			if ( token.IsCancellationRequested )
+			{
+				var exceptionDetails = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() );
+				var mivaException = new MivaException( string.Format( "{0}. Update products quantities request was cancelled", exceptionDetails ) );
+				MivaLogger.LogTraceException( mivaException );
+			}
+
+			var request = new UpdateProductsInventoryBatchRequest( base.Config.Credentials, skusQuantities );
+			var responses = await base.PostAsync< IEnumerable< MivaResponse > >( request, token, mark ).ConfigureAwait( false );
+
+			if ( responses != null && responses.Any() )
+			{
+				for ( int i = 0; i < responses.Count(); i++ )
+				{
+					var response = responses.ElementAt( i );
+					
+					if ( response.Success == 0 )
+					{
+						MivaLogger.LogTrace( new MivaException( response.ErrorMessage, response.ErrorCode ), 
+										string.Format( "Failed to update product {0} quantity to {1}", skusQuantities.ElementAt( i ).Key, skusQuantities.ElementAt( i ).Value ) );
+					}
+				}
+			}
 		}
 	}
 }
