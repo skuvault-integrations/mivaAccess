@@ -15,7 +15,7 @@ namespace MivaAccess.Services.Products
 		/// <param name="startDateUtc"></param>
 		/// <param name="token"></param>
 		/// <returns></returns>
-		Task< IEnumerable< MivaProduct > > GetProductsCreatedOrUpdatedAfterAsync( DateTime startDateUtc, CancellationToken token, Mark mark = null );
+		Task< IEnumerable< MivaProduct > > GetProductsUpdatedAfterAsync( DateTime startDateUtc, CancellationToken token, Mark mark = null );
 		/// <summary>
 		///	Get product's inventory by sku. Sku is not unique in Miva.
 		/// </summary>

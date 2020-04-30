@@ -27,14 +27,14 @@ namespace MivaAccess.Services.Products
 		/// <param name="token"></param>
 		/// <param name="mark"></param>
 		/// <returns></returns>
-		public async Task< IEnumerable< MivaProduct > > GetProductsCreatedOrUpdatedAfterAsync( DateTime lastModifiedDateUtc, CancellationToken token, Mark mark = null )
+		public async Task< IEnumerable< MivaProduct > > GetProductsUpdatedAfterAsync( DateTime lastModifiedDateUtc, CancellationToken token, Mark mark = null )
 		{
 			if ( mark == null )
 				mark = Mark.CreateNew();
 
 			if ( token.IsCancellationRequested )
 			{
-				var exceptionDetails = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() );
+				var exceptionDetails = CreateMethodCallInfo( base.Config.ApiBaseUrl, mark, additionalInfo: this.AdditionalLogInfo() );
 				var mivaException = new MivaException( string.Format( "{0}. Get modified products request was cancelled", exceptionDetails ) );
 				MivaLogger.LogTraceException( mivaException );
 			}
@@ -69,7 +69,7 @@ namespace MivaAccess.Services.Products
 
 			if ( token.IsCancellationRequested )
 			{
-				var exceptionDetails = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() );
+				var exceptionDetails = CreateMethodCallInfo( base.Config.ApiBaseUrl, mark, additionalInfo: this.AdditionalLogInfo() );
 				var mivaException = new MivaException( string.Format( "{0}. Find product by sku request was cancelled", exceptionDetails ) );
 				MivaLogger.LogTraceException( mivaException );
 			}
@@ -100,7 +100,7 @@ namespace MivaAccess.Services.Products
 
 			if ( token.IsCancellationRequested )
 			{
-				var exceptionDetails = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() );
+				var exceptionDetails = CreateMethodCallInfo( base.Config.ApiBaseUrl, mark, additionalInfo: this.AdditionalLogInfo() );
 				var mivaException = new MivaException( string.Format( "{0}. Update product's sku quantity request was cancelled", exceptionDetails ) );
 				MivaLogger.LogTraceException( mivaException );
 			}
@@ -132,24 +132,29 @@ namespace MivaAccess.Services.Products
 
 			if ( token.IsCancellationRequested )
 			{
-				var exceptionDetails = CreateMethodCallInfo( "", mark, additionalInfo: this.AdditionalLogInfo() );
+				var exceptionDetails = CreateMethodCallInfo( base.Config.ApiBaseUrl, mark, additionalInfo: this.AdditionalLogInfo() );
 				var mivaException = new MivaException( string.Format( "{0}. Update products quantities request was cancelled", exceptionDetails ) );
 				MivaLogger.LogTraceException( mivaException );
 			}
 
-			var request = new UpdateProductsInventoryBatchRequest( base.Config.Credentials, skusQuantities );
-			var responses = await base.PostAsync< IEnumerable< MivaResponse > >( request, token, mark ).ConfigureAwait( false );
+			var chunks = skusQuantities.SplitToChunks( base.Config.InventoryUpdateBatchSize );
 
-			if ( responses != null && responses.Any() )
+			foreach( var chunk in chunks )
 			{
-				for ( int i = 0; i < responses.Count(); i++ )
+				var request = new UpdateProductsInventoryBatchRequest( base.Config.Credentials, chunk );
+				var responses = await base.PostAsync< IEnumerable< MivaResponse > >( request, token, mark ).ConfigureAwait( false );
+
+				if ( responses != null && responses.Any() )
 				{
-					var response = responses.ElementAt( i );
-					
-					if ( response.Success == 0 )
+					for ( int i = 0; i < responses.Count(); i++ )
 					{
-						MivaLogger.LogTrace( new MivaException( response.ErrorMessage, response.ErrorCode ), 
-										string.Format( "Failed to update product {0} quantity to {1}", skusQuantities.ElementAt( i ).Key, skusQuantities.ElementAt( i ).Value ) );
+						var response = responses.ElementAt( i );
+					
+						if ( response.Success == 0 )
+						{
+							MivaLogger.LogTrace( new MivaException( response.ErrorMessage, response.ErrorCode ), 
+											string.Format( "Failed to update product {0} quantity to {1}", skusQuantities.ElementAt( i ).Key, skusQuantities.ElementAt( i ).Value ) );
+						}
 					}
 				}
 			}

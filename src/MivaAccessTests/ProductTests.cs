@@ -27,7 +27,7 @@ namespace MivaAccessTests
 		[ Test ]
 		public async Task GetModifiedProducts()
 		{
-			var products = await this._productsService.GetProductsCreatedOrUpdatedAfterAsync( DateTime.UtcNow.AddMonths( -1 ), CancellationToken.None );
+			var products = await this._productsService.GetProductsUpdatedAfterAsync( DateTime.UtcNow.AddMonths( -1 ), CancellationToken.None );
 			products.Should().NotBeNullOrEmpty();
 		}
 
@@ -109,6 +109,26 @@ namespace MivaAccessTests
 				{ testSku, randomizer.Next( 1, 100 ) },
 				{ testSku2, randomizer.Next( 1, 100 ) }
 			};
+
+			await this._productsService.UpdateProductsQuantitiesBySkuAsync( inventory, CancellationToken.None );
+
+			foreach( var skuInventory in inventory )
+			{
+				var product = await this._productsService.FindProductBySku( skuInventory.Key, CancellationToken.None );
+				product.FirstOrDefault().Quantity.Should().Be( skuInventory.Value );
+			}
+		}
+
+		[ Test ]
+		public async Task UpdateProductQuantitiesWithMinBatchSize()
+		{
+			var randomizer = new Random();
+			var inventory = new Dictionary< string, int >()
+			{
+				{ testSku, randomizer.Next( 1, 100 ) },
+				{ testSku2, randomizer.Next( 1, 100 ) }
+			};
+			base.Config.InventoryUpdateBatchSize = 1;
 
 			await this._productsService.UpdateProductsQuantitiesBySkuAsync( inventory, CancellationToken.None );
 
