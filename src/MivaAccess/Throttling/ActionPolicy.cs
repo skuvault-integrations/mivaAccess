@@ -60,7 +60,7 @@ namespace MivaAccess.Throttling
 							mivaException = new MivaNetworkException( exceptionDetails, exception );
 						else
 						{
-							mivaException = new MivaException( exceptionDetails, exception );
+							mivaException = new MivaException( exceptionDetails, exception, null );
 							onException?.Invoke( mivaException );
 						}
 

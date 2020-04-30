@@ -6,7 +6,12 @@ namespace MivaAccess.Exceptions
 	{
 		public string ErrorCode { get; set; }
 
-		public MivaException( string message, Exception innerException ) : base( message, innerException ) { }
-		public MivaException( string message ) : this ( message, null) { }
+		public MivaException( string message, Exception innerException, string code ) : base( message, innerException ) 
+		{
+			this.ErrorCode = code;
+		}
+
+		public MivaException( string message, string code ) : this( message, null, code ) { }
+		public MivaException( string message ) : this ( message, null, null ) { }
 	}
 }

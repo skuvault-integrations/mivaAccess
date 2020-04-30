@@ -2,10 +2,18 @@
 
 namespace MivaAccess.Models.Infrastructure
 {
-	public class MivaResponse < T >
+	public class MivaResponse
 	{
 		[ JsonProperty( "success" ) ]
 		public int Success { get; set; }
+		[ JsonProperty( "error_code" ) ]
+		public string ErrorCode { get; set; }
+		[ JsonProperty( "error_message" ) ]
+		public string ErrorMessage { get; set; }
+	}
+
+	public class MivaDataResponse < T > : MivaResponse where T : class
+	{
 		[ JsonProperty( "data" ) ]
 		public MivaResponseData< T > Data { get; set; }
 	}
