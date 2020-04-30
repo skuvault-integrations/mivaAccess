@@ -153,7 +153,7 @@ namespace MivaAccess.Services.Products
 						if ( response.Success == 0 )
 						{
 							MivaLogger.LogTrace( new MivaException( response.ErrorMessage, response.ErrorCode ), 
-											string.Format( "Failed to update product {0} quantity to {1}", skusQuantities.ElementAt( i ).Key, skusQuantities.ElementAt( i ).Value ) );
+											string.Format( "Failed to update product {0} quantity to {1}", chunk.ElementAt( i ).Key, chunk.ElementAt( i ).Value ) );
 						}
 					}
 				}

@@ -22,7 +22,7 @@ namespace MivaAccess.Configuration
 			this.ThrottlingOptions = throttlingOptions;
 			this.NetworkOptions = networkOptions;
 			this.ApiBaseUrl = $"{ credentials.StoreUrl }/{ credentials.RootDirectory }/json.mvc";
-			this.InventoryUpdateBatchSize = 1000;
+			this.InventoryUpdateBatchSize = 100;
 		}
 
 		public MivaConfig( MivaCredentials credentials ) : this( credentials, ThrottlingOptions.MivaDefaultThrottlingOptions, NetworkOptions.MivaDefaultNetworkOptions )
