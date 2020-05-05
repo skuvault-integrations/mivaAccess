@@ -10,6 +10,8 @@ namespace MivaAccess.Models.Infrastructure
 		public string ErrorCode { get; set; }
 		[ JsonProperty( "error_message" ) ]
 		public string ErrorMessage { get; set; }
+		[ JsonProperty( "processed" ) ]
+		public int? Processed { get; set; }
 	}
 
 	public class MivaDataResponse < T > : MivaResponse where T : class

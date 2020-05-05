@@ -8,16 +8,17 @@ namespace MivaAccess.Models.Infrastructure
 	public abstract class MivaQuery : MivaRequest
 	{
 		[ JsonProperty( "Count" ) ]
-		public int Count { get; private set; }
+		public int Count { get; protected set; }
 
 		[ JsonProperty( "Offset" ) ]
-		public int Offset { get; private set; }
+		public int Offset { get; protected set; }
 
 		[ JsonProperty( "Filter" ) ]
 		public IEnumerable< MivaRequestFilter > Filters { get; set; }
 
-		public MivaQuery( MivaCredentials credentials, string functionName ) : base( credentials, functionName )
+		protected MivaQuery( MivaCredentials credentials, string functionName ) : base( credentials, functionName )
 		{
+			this.SetPage( 0, 1 );
 		}
 
 		public void SetPage( int page, int pageSize )
@@ -29,6 +30,24 @@ namespace MivaAccess.Models.Infrastructure
 			this.Offset = pageSize * page;
 			
 			UpdateTimestamp();
+		}
+	}
+
+	public abstract class MivaModuleQuery : MivaQuery
+	{
+		[ JsonProperty( "Module_Code" ) ]
+		public string ModuleCode { get; private set; }
+		
+		[ JsonProperty( "Module_Function" ) ]
+		public string ModuleFunction { get; private set; }
+
+		protected MivaModuleQuery( MivaCredentials credentials, string moduleCode, string moduleFunction ) : base( credentials, "Module" )
+		{
+			Condition.Requires( moduleCode, "moduleCode" ).IsNotNullOrEmpty();
+			Condition.Requires( moduleFunction, "moduleFunction" ).IsNotNullOrEmpty();
+
+			this.ModuleCode = moduleCode;
+			this.ModuleFunction = moduleFunction;
 		}
 	}
 
@@ -67,6 +86,7 @@ namespace MivaAccess.Models.Infrastructure
 
 	public class MivaRequestOnDemandFilter : MivaRequestFilter
 	{
+		[ JsonProperty( "value" ) ]
 		public IEnumerable< string > Columns { get; private set; }
 
 		public MivaRequestOnDemandFilter( IEnumerable< string > columns ) : base( "ondemandcolumns" )
