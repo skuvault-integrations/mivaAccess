@@ -39,7 +39,30 @@ namespace MivaAccess.Services.Products
 				MivaLogger.LogTraceException( mivaException );
 			}
 
+			var products = new List< MivaProduct >();
+			var pageIndex = 0;
+
+			while( true )
+			{
+				var productsFromPage = await CollectProductsFromPage( lastModifiedDateUtc, pageIndex, base.Config.ProductsPageSize, token, mark ).ConfigureAwait( false );
+
+				if ( !productsFromPage.Any() )
+				{
+					break;
+				}
+
+				products.AddRange( productsFromPage );
+				++pageIndex;
+			}
+
+			return products;
+		}
+
+		private async Task< IEnumerable< MivaProduct > > CollectProductsFromPage( DateTime lastModifiedDateUtc, int pageIndex, int pageSize, CancellationToken token, Mark mark )
+		{
 			var request = new GetModifiedProductsRequest( base.Config.Credentials, lastModifiedDateUtc );
+			request.SetPage( pageIndex, pageSize );
+
 			var response = await base.PostAsync< MivaDataResponse < IEnumerable< Product > > >( request, token, mark ).ConfigureAwait( false );
 
 			if ( response.Success == 0 )
@@ -49,7 +72,7 @@ namespace MivaAccess.Services.Products
 
 			if ( response.Data?.Data != null )
 			{
-				return response.Data.Data.Select( r => r.ToSVProduct() );
+				return response.Data.Data.Select( r => r.ToSVProduct( base.Config.Credentials ) );
 			}
 
 			return Array.Empty< MivaProduct >();
@@ -79,7 +102,7 @@ namespace MivaAccess.Services.Products
 
 			if ( response.Data?.Data != null )
 			{
-				return response.Data.Data.Select( r => r.ToSVProduct() );
+				return response.Data.Data.Select( r => r.ToSVProduct( base.Config.Credentials ) );
 			}
 
 			return Array.Empty< MivaProduct >();
