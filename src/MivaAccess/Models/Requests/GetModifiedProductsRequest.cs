@@ -16,7 +16,7 @@ namespace MivaAccess.Models.Requests
 						new MivaRequestFilterSearchValue(){ Field = "dt_updated", Operator = "GE", Value = lastMofiedDateUtc.FromUtcTimeToEpoch().ToString() }
 					}
 				),
-				new MivaRequestOnDemandFilter( new string[] { "descrip", "attributes", "productimagedata", "categories" } )
+				new MivaRequestOnDemandFilter( new string[] { "descrip", "productimagedata", "categories" } )
 			};
 		}
 	}

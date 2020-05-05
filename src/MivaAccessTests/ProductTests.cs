@@ -32,6 +32,15 @@ namespace MivaAccessTests
 		}
 
 		[ Test ]
+		public async Task GetModifiedProductsUsingSmallPageSize()
+		{
+			base.Config.ProductsPageSize = 1;
+			var products = await this._productsService.GetProductsUpdatedAfterAsync( DateTime.UtcNow.AddMonths( -1 ), CancellationToken.None );
+			
+			products.Should().NotBeNullOrEmpty();
+		}
+
+		[ Test ]
 		public async Task FindProductBySku()
 		{
 			var products = await this._productsService.FindProductBySku( testSku, CancellationToken.None );
