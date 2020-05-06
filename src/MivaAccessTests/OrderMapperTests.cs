@@ -29,7 +29,7 @@ namespace MivaAccessTests
 				ShipCountry = "RUSSIA",
 				ShipMethod = "DHL",
 				ShipZip = "188517",
-				Notes = new OrderNote[] { new OrderNote() { NoteText = "Fragile cargo" } },
+				Notes = new OrderNote[] { new OrderNote() { NoteText = "Fragile cargo", UserId = 1 } },
 				Items = new OrderItem[] { 
 					new OrderItem()
 					{
@@ -126,6 +126,49 @@ namespace MivaAccessTests
 
 			svOrder.Status.Should().Be( order.Status );
 			svOrder.PaymentStatus.Should().Be( order.PaymentStatus );
+		}
+
+		[ Test ]
+		public void ToSVOrderWithItemShipmentData()
+		{
+			var order = new Order()
+			{
+				Id = 12345,
+				OrderDate = 1588314459,
+				Items = new OrderItem[]
+				{
+					new OrderItem()
+					{
+						Sku = "MV-testsku1",
+						Quantity = 5,
+						Price = 1.5M,
+						Shipment = new OrderItemShipment()
+						{
+							Id = 1,
+							Cost = 0.5M,
+							ShipDate = 1588763364,
+							Status = 200,
+							TrackLink = "https://ups.com/track?num=12345",
+							TrackNum = "12345",
+							TrackType = "UPS", 
+							Weight = 2.1M
+						}
+					}
+				}
+			};
+
+			var svOrder = order.ToSVOrder();
+
+			svOrder.Items.Count().Should().Be( 1 );
+			var shipmentInfo = svOrder.Items.First().ShipmentInfo;
+			shipmentInfo.Id.Should().Be( order.Items.First().Shipment.Id );
+			shipmentInfo.ShipDate.Should().Be( new DateTime( 2020, 05, 06, 11, 09, 24 ) );
+			shipmentInfo.Status.Should().Be( MivaOrderItemShipmentStatus.Shipped );
+			shipmentInfo.TrackingNumber.Should().Be( order.Items.First().Shipment.TrackNum );
+			shipmentInfo.TrackingUrl.Should().Be( order.Items.First().Shipment.TrackLink );
+			shipmentInfo.Carrier.Should().Be( order.Items.First().Shipment.TrackType );
+			shipmentInfo.Weight.Should().Be( order.Items.First().Shipment.Weight );
+			shipmentInfo.Cost.Should().Be( order.Items.First().Shipment.Cost );
 		}
 	}
 }

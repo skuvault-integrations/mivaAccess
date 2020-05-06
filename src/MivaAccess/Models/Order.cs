@@ -114,6 +114,8 @@ namespace MivaAccess.Models
 		public decimal Price { get; set; }
 		[ JsonProperty( "discounts" ) ]
 		public IEnumerable< OrderItemDiscount > Discounts { get; set; }
+		[ JsonProperty( "shipment" ) ]
+		public OrderItemShipment Shipment { get; set; }
 	}
 
 	public class OrderItemDiscount
@@ -128,6 +130,30 @@ namespace MivaAccess.Models
 		public string Description { get; set; }
 		[ JsonProperty( "discount" ) ]
 		public decimal Amount { get; set; }
+	}
+
+	public class OrderItemShipment
+	{
+		[ JsonProperty( "id" ) ]
+		public long Id { get; set; }
+		[ JsonProperty( "code" ) ]
+		public string Code { get; set; }
+		[ JsonProperty( "status" ) ]
+		public int Status { get; set; }
+		[ JsonProperty( "labelcount" ) ]
+		public int LabelCount { get; set; }
+		[ JsonProperty( "ship_date" ) ]
+		public long ShipDate { get; set; }
+		[ JsonProperty( "tracknum" ) ]
+		public string TrackNum { get; set; }
+		[ JsonProperty( "tracktype" ) ]
+		public string TrackType { get; set; }
+		[ JsonProperty( "tracklink" ) ]
+		public string TrackLink { get; set; }
+		[ JsonProperty( "weight" ) ]
+		public decimal Weight { get; set; }
+		[ JsonProperty( "cost" ) ]
+		public decimal Cost { get; set; }
 	}
 
 	public class MivaOrder
@@ -179,12 +205,31 @@ namespace MivaAccess.Models
 		public int Quantity { get; set; }
 		public decimal UnitPrice { get; set; }
 		public decimal Discount { get; set; }
+		public MivaOrderItemShipment ShipmentInfo { get; set; }
 	}
 
 	public class MivaOrderPromotion
 	{
 		public string Code { get; set; }
 		public decimal Amount { get; set; }
+	}
+
+	public class MivaOrderItemShipment
+	{
+		public long Id { get; set; }
+		public MivaOrderItemShipmentStatus Status { get; set; }
+		public DateTime ShipDate { get; set; }
+		public string TrackingNumber { get; set; }
+		public string Carrier { get; set; }
+		public string TrackingUrl { get; set; }
+		public decimal Weight { get; set; }
+		public decimal Cost { get; set; }
+	}
+
+	public enum MivaOrderItemShipmentStatus
+	{
+		Picking = 100,
+		Shipped = 200
 	}
 
 	public static class OrderExtensions
@@ -258,12 +303,30 @@ namespace MivaAccess.Models
 					itemDiscount = item.Discounts.Sum( d => d.Amount );
 				}
 
+				MivaOrderItemShipment shipmentInfo = null;
+
+				if ( item.Shipment != null )
+				{
+					shipmentInfo = new MivaOrderItemShipment()
+					{
+						Id = item.Shipment.Id,
+						Status = (MivaOrderItemShipmentStatus)item.Shipment.Status,
+						ShipDate = item.Shipment.ShipDate.FromEpochTime(),
+						TrackingNumber = item.Shipment.TrackNum,
+						TrackingUrl = item.Shipment.TrackLink,
+						Carrier = item.Shipment.TrackType,
+						Weight = item.Shipment.Weight,
+						Cost = item.Shipment.Cost
+					};
+				}
+
 				items.Add( new MivaOrderItem()
 				{
 					Sku = item.Sku,
 					Quantity = item.Quantity,
 					UnitPrice = item.Price,
-					Discount = itemDiscount
+					Discount = itemDiscount,
+					ShipmentInfo = shipmentInfo
 				} );
 			}
 			
