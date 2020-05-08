@@ -52,5 +52,79 @@ namespace MivaAccessTests
 											+ "/" + product.Images.First().Url );
 			svProduct.Categories.First().Should().Be( product.Categories.First().Name );
 		}
+
+		[ Test ]
+		public void GetImagesUrlsOrderedByPriorityWhereFirstImageIsMain()
+		{
+			var product = new Product()
+			{
+				Sku = "MV-testsku1",
+				Images = new ProductImage[]
+				{
+					new ProductImage()
+					{
+						Id = 1,
+						Code = "none",
+						DisplayOrder = 2,
+						Url = "/images/1.jpg"
+					},
+					new ProductImage()
+					{
+						Id = 2,
+						Code = "main",
+						DisplayOrder = 1,
+						Url = "/images/2.png"
+					},
+					new ProductImage()
+					{
+						Id = 3,
+						Code = "none",
+						DisplayOrder = 3,
+						Url = "/images/3.jpg"
+					}
+				}
+			};
+
+			var svProduct = product.ToSVProduct( base.Config.Credentials );
+
+			svProduct.ImagesUrls.First().Should().Contain( product.Images.ElementAt( 1 ).Url );
+		}
+
+		[ Test ]
+		public void GetImagesUrlsOrderedByPriorityWhereImagesAreNotMain()
+		{
+			var product = new Product()
+			{
+				Sku = "MV-testsku1",
+				Images = new ProductImage[]
+				{
+					new ProductImage()
+					{
+						Id = 1,
+						Code = "none",
+						DisplayOrder = 2,
+						Url = "/images/1.png"
+					},
+					new ProductImage()
+					{
+						Id = 2,
+						Code = "none",
+						DisplayOrder = 3,
+						Url = "/images/2.jpg"
+					},
+					new ProductImage()
+					{
+						Id = 3,
+						Code = "none",
+						DisplayOrder = 1,
+						Url = "/images/3.jpg"
+					}
+				}
+			};
+
+			var svProduct = product.ToSVProduct( base.Config.Credentials );
+
+			svProduct.ImagesUrls.First().Should().Contain( product.Images.ElementAt( 2 ).Url );
+		}
 	}
 }

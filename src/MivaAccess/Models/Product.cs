@@ -105,13 +105,21 @@ namespace MivaAccess.Models
 				Quantity = product.Inventory,
 				IsInventoryTracked = product.IsInventoryTracked,
 				Categories = product.Categories?.Where( c => c.IsActive ).OrderBy( c => c.Name ).Select( c => c.Name ),
-				ImagesUrls = product.Images?.Where( i => i.Code == "main" )
-									.OrderBy( i => i.DisplayOrder )
-									.Select( i => GetImageAbsoluteUrl( i.Url, credentials ) )
+				ImagesUrls = GetImagesUrlsByPriority( product.Images, credentials )
 			};
 		}
 
-		public static string GetImageAbsoluteUrl( string relativeUrl, MivaCredentials credentials )
+		private static IEnumerable< string > GetImagesUrlsByPriority( IEnumerable< ProductImage > images, MivaCredentials credentials )
+		{
+			if ( images == null || !images.Any() )
+				return Array.Empty< string >();
+
+			return images.OrderBy( i => i.Code == "main" ? 0 : 1 )
+						.OrderBy( i => i.DisplayOrder )
+						.Select( i => GetImageAbsoluteUrl( i.Url, credentials ) );
+		}
+
+		private static string GetImageAbsoluteUrl( string relativeUrl, MivaCredentials credentials )
 		{
 			return $"{ credentials.StoreUrl }/{ credentials.RootDirectory }/{ relativeUrl }";
 		}
