@@ -346,7 +346,7 @@ namespace MivaAccess.Models
 						}
 					case "DISCOUNT":
 						{
-							svOrder.Discount = orderCharge.Amount;
+							svOrder.Discount = orderCharge.Amount * -1;
 							break;
 						}
 				}

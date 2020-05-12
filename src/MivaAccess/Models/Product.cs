@@ -115,7 +115,7 @@ namespace MivaAccess.Models
 				return Array.Empty< string >();
 
 			return images.OrderBy( i => i.Code == "main" ? 0 : 1 )
-						.OrderBy( i => i.DisplayOrder )
+						.ThenBy( i => i.DisplayOrder )
 						.Select( i => GetImageAbsoluteUrl( i.Url, credentials ) );
 		}
 

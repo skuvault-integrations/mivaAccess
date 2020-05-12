@@ -54,7 +54,7 @@ namespace MivaAccessTests
 		}
 
 		[ Test ]
-		public void GetImagesUrlsOrderedByPriorityWhereFirstImageIsMain()
+		public void GetImagesUrlsOrderedByPriorityWhereOneOfTheImagesIsMain()
 		{
 			var product = new Product()
 			{
@@ -65,14 +65,14 @@ namespace MivaAccessTests
 					{
 						Id = 1,
 						Code = "none",
-						DisplayOrder = 2,
+						DisplayOrder = 1,
 						Url = "/images/1.jpg"
 					},
 					new ProductImage()
 					{
 						Id = 2,
 						Code = "main",
-						DisplayOrder = 1,
+						DisplayOrder = 2,
 						Url = "/images/2.png"
 					},
 					new ProductImage()

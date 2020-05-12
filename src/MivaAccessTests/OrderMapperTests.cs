@@ -170,5 +170,18 @@ namespace MivaAccessTests
 			shipmentInfo.Weight.Should().Be( order.Items.First().Shipment.Weight );
 			shipmentInfo.Cost.Should().Be( order.Items.First().Shipment.Cost );
 		}
+
+		[ Test ]
+		public void ToSVOrderWithNegativeDiscountValue()
+		{
+			var order = new Order()
+			{
+				Id = 12345,
+				Charges = new OrderCharge[] { new OrderCharge() {  Type = "DISCOUNT", Amount = -5 } }
+			};
+
+			var svOrder = order.ToSVOrder();
+			svOrder.Discount.Should().Be( order.Charges.First().Amount * -1 );
+		}
 	}
 }
