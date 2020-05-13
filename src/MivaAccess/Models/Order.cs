@@ -44,6 +44,10 @@ namespace MivaAccess.Models
 		public decimal TotalShip { get; set; }
 		[ JsonProperty( "total" ) ]
 		public decimal Total { get; set; }
+		[ JsonProperty( "total_auth" ) ]
+		public decimal TotalAuthorized { get; set; }
+		[ JsonProperty( "net_capt" ) ]
+		public decimal NetCaptured { get; set; }
 		[ JsonProperty( "notes" ) ]
 		public IEnumerable< OrderNote > Notes { get; set; }
 		[ JsonProperty( "items" ) ]
@@ -241,7 +245,7 @@ namespace MivaAccess.Models
 				Id = order.Id.ToString(),
 				OrderDateUtc = order.OrderDate.FromEpochTime(),
 				Status = (MivaOrderStatusEnum)order.Status,
-				PaymentStatus = (MivaOrderPaymentStatusEnum)order.PaymentStatus,
+				PaymentStatus = GetPaymentStatus( order ),
 				ShippingInfo = new MivaShippingInfo()
 				{
 					ContactInfo = new MivaShippingContactInfo()
@@ -351,6 +355,20 @@ namespace MivaAccess.Models
 						}
 				}
 			}
+		}
+
+		private static MivaOrderPaymentStatusEnum GetPaymentStatus( Order order )
+		{
+			if ( order.TotalAuthorized == 0 )
+				return MivaOrderPaymentStatusEnum.Pending;
+
+			if ( order.TotalAuthorized > 0 && order.NetCaptured == 0 )
+				return MivaOrderPaymentStatusEnum.Authorized;
+
+			if ( order.NetCaptured < order.Total )
+				return MivaOrderPaymentStatusEnum.PartiallyCaptured;
+
+			return MivaOrderPaymentStatusEnum.Captured;
 		}
 	}
 

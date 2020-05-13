@@ -16,7 +16,6 @@ namespace MivaAccessTests
 			{
 				Id = 12345,
 				Status = 100,
-				PaymentStatus = 200,
 				OrderDate = 1588314459,
 				ShipFName = "Peter Jason",
 				ShipLName = "Quill",
@@ -76,7 +75,6 @@ namespace MivaAccessTests
 
 			svOrder.Id.Should().Be( order.Id.ToString() );
 			svOrder.Status.Should().Be( MivaOrderStatusEnum.Processing );
-			svOrder.PaymentStatus.Should().Be( MivaOrderPaymentStatusEnum.Captured );
 			svOrder.Note.Should().Be( order.Notes.First().NoteText );
 			svOrder.OrderDateUtc.Should().Be( new DateTime( 2020, 05, 01, 06, 27, 39 ) );
 			
@@ -103,7 +101,7 @@ namespace MivaAccessTests
 			svOrder.Items.First().Discount.Should().Be( order.Items.First().Discounts.First().Amount );
 
 			svOrder.Tax.Should().Be( order.Charges.First( c => c.Type == "TAX" ).Amount );
-			svOrder.Discount.Should().Be( order.Charges.First( c => c.Type == "DISCOUNT" ).Amount );
+			svOrder.Discount.Should().Be( order.Charges.First( c => c.Type == "DISCOUNT" ).Amount * -1 );
 
 			svOrder.Promotions.First().Code.Should().Be( order.Coupons.First().Code );
 			svOrder.Promotions.First().Amount.Should().Be( order.Coupons.First().Total );
@@ -118,14 +116,12 @@ namespace MivaAccessTests
 			{
 				Id = 12345,
 				OrderDate = 1588314459,
-				Status = 700,
-				PaymentStatus = 300
+				Status = 700
 			};
 
 			var svOrder = order.ToSVOrder();
 
 			svOrder.Status.Should().Be( order.Status );
-			svOrder.PaymentStatus.Should().Be( order.PaymentStatus );
 		}
 
 		[ Test ]
@@ -182,6 +178,66 @@ namespace MivaAccessTests
 
 			var svOrder = order.ToSVOrder();
 			svOrder.Discount.Should().Be( order.Charges.First().Amount * -1 );
+		}
+
+		[ Test ]
+		public void ToSvOrderWithPendingPaymentStatus()
+		{
+			var order = new Order()
+			{
+				Id = 12345,
+				Total = 10,
+				TotalAuthorized = 0,
+				NetCaptured = 0
+			};
+
+			var svOrder = order.ToSVOrder();
+			svOrder.PaymentStatus.Should().Be( MivaOrderPaymentStatusEnum.Pending );
+		}
+
+		[ Test ]
+		public void ToSvOrderWithAuthorizedPaymentStatus()
+		{
+			var order = new Order()
+			{
+				Id = 12345,
+				Total = 10,
+				TotalAuthorized = 10,
+				NetCaptured = 0
+			};
+
+			var svOrder = order.ToSVOrder();
+			svOrder.PaymentStatus.Should().Be( MivaOrderPaymentStatusEnum.Authorized );
+		}
+
+		[ Test ]
+		public void ToSvOrderWithPartiallyCapturedPaymentStatus()
+		{
+			var order = new Order()
+			{
+				Id = 12345,
+				Total = 15,
+				TotalAuthorized = 10,
+				NetCaptured = 10
+			};
+
+			var svOrder = order.ToSVOrder();
+			svOrder.PaymentStatus.Should().Be( MivaOrderPaymentStatusEnum.PartiallyCaptured );
+		}
+
+		[ Test ]
+		public void ToSvOrderWithCapturedPaymentStatus()
+		{
+			var order = new Order()
+			{
+				Id = 12345,
+				Total = 10,
+				TotalAuthorized = 10,
+				NetCaptured = 10
+			};
+
+			var svOrder = order.ToSVOrder();
+			svOrder.PaymentStatus.Should().Be( MivaOrderPaymentStatusEnum.Captured );
 		}
 	}
 }
