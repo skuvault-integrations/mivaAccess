@@ -65,6 +65,8 @@ namespace MivaAccess.Services.Products
 
 			var response = await base.PostAsync< MivaDataResponse < IEnumerable< Product > > >( request, token, mark ).ConfigureAwait( false );
 
+			MivaLogger.LogTrace( this.CreateMethodCallInfo( mark: mark, url: base.Config.ApiBaseUrl, responseBodyRaw: response.ToJson(), additionalInfo: this.AdditionalLogInfo() ) );
+
 			if ( response.Success == 0 )
 			{
 				throw new MivaException( response.ErrorMessage, response.ErrorCode );
