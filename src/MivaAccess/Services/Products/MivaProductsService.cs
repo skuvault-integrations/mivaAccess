@@ -42,9 +42,13 @@ namespace MivaAccess.Services.Products
 			var products = new List< MivaProduct >();
 			var pageIndex = 0;
 
+			AddLog( "Get Products Started", this.CreateMethodCallInfo( mark: mark, url: base.Config.ApiBaseUrl, additionalInfo: this.AdditionalLogInfo() ) );
+
 			while( true )
 			{
 				var productsFromPage = await CollectProductsFromPage( lastModifiedDateUtc, pageIndex, base.Config.ProductsPageSize, token, mark ).ConfigureAwait( false );
+
+				AddLog( "Get Products Retry", this.CreateMethodCallInfo( mark: mark, url: base.Config.ApiBaseUrl,responseBodyRaw: productsFromPage.ToJson(), additionalInfo: this.AdditionalLogInfo() ) );
 
 				if ( !productsFromPage.Any() )
 				{
@@ -55,6 +59,8 @@ namespace MivaAccess.Services.Products
 				++pageIndex;
 			}
 
+			AddLog( "Get Products Finished", this.CreateMethodCallInfo( mark: mark, url: base.Config.ApiBaseUrl, additionalInfo: this.AdditionalLogInfo() ) );
+
 			return products;
 		}
 
@@ -63,9 +69,11 @@ namespace MivaAccess.Services.Products
 			var request = new GetModifiedProductsRequest( base.Config.Credentials, lastModifiedDateUtc );
 			request.SetPage( pageIndex, pageSize );
 
+			AddLog( "Products Request", this.CreateMethodCallInfo( mark: mark, url: base.Config.ApiBaseUrl, responseBodyRaw: request.ToJson(), additionalInfo: this.AdditionalLogInfo() ) );
+
 			var response = await base.PostAsync< MivaDataResponse < IEnumerable< Product > > >( request, token, mark ).ConfigureAwait( false );
 
-			MivaLogger.LogTrace( this.CreateMethodCallInfo( mark: mark, url: base.Config.ApiBaseUrl, responseBodyRaw: response.ToJson(), additionalInfo: this.AdditionalLogInfo() ) );
+			AddLog( "Products Response", this.CreateMethodCallInfo( mark: mark, url: base.Config.ApiBaseUrl, responseBodyRaw: response.ToJson(), additionalInfo: this.AdditionalLogInfo() ) );
 
 			if ( response.Success == 0 )
 			{
@@ -183,6 +191,12 @@ namespace MivaAccess.Services.Products
 					}
 				}
 			}
+		}
+
+		private void AddLog( string message, string details )
+		{
+			var info = new MivaException( string.Format( "{0}: {1}", message, details ) );
+			MivaLogger.LogTraceException( info );
 		}
 	}
 }
