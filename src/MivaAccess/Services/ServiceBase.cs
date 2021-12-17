@@ -72,6 +72,8 @@ namespace MivaAccess.Services
 
 		protected Task< T > PostAsync< T >( MivaRequest request, CancellationToken cancellationToken, Mark mark = null, [ CallerMemberName ] string methodName = "" )
 		{
+			AddLog( "Base PostAsync", this.CreateMethodCallInfo( mark: mark, url: this.Config.ApiBaseUrl, responseBodyRaw: request.ToJson(), additionalInfo: this.AdditionalLogInfo() ) );
+
 			return this.PostAsync< T >( new MivaCommand( this.Config, request ), cancellationToken, mark, methodName );
 		}
 
@@ -85,8 +87,13 @@ namespace MivaAccess.Services
 				this.SetAuthHeader( command );
 				var payload = new StringContent( command.Payload.ToJson(), Encoding.UTF8, "application/json" );
 				payload.Headers.ContentType = MediaTypeHeaderValue.Parse( "application/json" );
+
+				AddLog( "Start PostAsync", this.CreateMethodCallInfo( mark: mark, url: this.Config.ApiBaseUrl, responseBodyRaw: payload.ToJson(), additionalInfo: this.AdditionalLogInfo() ) );
+
 				var httpResponse = await HttpClient.PostAsync( command.Url, payload ).ConfigureAwait( false );
 				var content = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait( false );
+
+				AddLog( "End PostAsync", this.CreateMethodCallInfo( mark: mark, url: this.Config.ApiBaseUrl, responseBodyRaw: content, additionalInfo: this.AdditionalLogInfo() ) );
 
 				ThrowIfError( httpResponse, content );
 
@@ -94,6 +101,8 @@ namespace MivaAccess.Services
 			}, cancellationToken ).ConfigureAwait( false );
 
 			var response = JsonConvert.DeserializeObject< T >( responseContent );
+
+			AddLog( "PostAsync Response", this.CreateMethodCallInfo( mark: mark, url: this.Config.ApiBaseUrl, responseBodyRaw: response.ToJson(), additionalInfo: this.AdditionalLogInfo() ) );
 
 			return response;
 		}
@@ -166,6 +175,13 @@ namespace MivaAccess.Services
 				Response = (object)responseBody ?? responseBodyRaw,
 				Errors = errors
 			}.ToJson();
+		}
+
+		protected void AddLog( string message, string details )
+		{
+			var info = new MivaException( string.Format( "{0}: {1}", message, details ) );
+
+			MivaLogger.LogTrace( info, "Trace" );
 		}
 	}
 }
