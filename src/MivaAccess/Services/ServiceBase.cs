@@ -180,8 +180,8 @@ namespace MivaAccess.Services
 		protected void AddLog( string message, string details )
 		{
 			var info = new MivaException( string.Format( "{0}: {1}", message, details ) );
-
-			MivaLogger.LogTrace( info, "Trace" );
+			MivaLogger.LogTraceException( info );
+			////MivaLogger.LogTrace( info, "Trace" );
 		}
 	}
 }
