@@ -5,14 +5,14 @@
 	<Authors>SkuVault</Authors>
     <Company>SkuVault</Company>
     <Description>Miva REST API wrapper</Description>
-    <Copyright>SkuVault © 2020</Copyright>
+    <Copyright>SkuVault © 2022</Copyright>
     <PackageLicenseUrl>https://github.com/skuvault/mivaAccess/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/skuvault/mivaAccess</PackageProjectUrl>
     <RepositoryUrl>https://github.com/skuvault/mivaAccess</RepositoryUrl>
-    <Version>1.0.3.0-beta1</Version>
+    <Version>1.2.4.0</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <AssemblyVersion>1.0.3.1</AssemblyVersion>
-    <FileVersion>1.0.3.1</FileVersion>
+    <AssemblyVersion>1.2.4.0</AssemblyVersion>
+    <FileVersion>1.2.4.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
