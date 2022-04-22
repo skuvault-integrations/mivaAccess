@@ -93,9 +93,17 @@ namespace MivaAccess.Services
 				return content;
 			}, cancellationToken ).ConfigureAwait( false );
 
-			var response = JsonConvert.DeserializeObject< T >( responseContent );
-
-			return response;
+			try
+			{
+				var response = JsonConvert.DeserializeObject<T>(responseContent);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				var mivaException = new MivaException($"Cannot deserialize response {responseContent}", ex, null);
+				MivaLogger.LogTraceException(mivaException);
+				throw mivaException;
+			}
 		}
 
 		private void SetAuthHeader( MivaCommand command )

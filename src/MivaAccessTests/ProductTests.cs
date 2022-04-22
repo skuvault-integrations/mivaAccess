@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using MivaAccess.Exceptions;
 
 namespace MivaAccessTests
 {
@@ -170,6 +171,23 @@ namespace MivaAccessTests
 					product.Quantity.Should().Be( skuInventory.Value );
 				}
 			}
+		}
+
+		[Test(Description = "This test reproduces an issue with creating request signature. " +
+		                    "Should be fixed in ticket https://agileharbor.atlassian.net/browse/PBL-8100")]
+		public void UpdateProductsQuantitiesBySku_ThrowsException_WhenSkuWithSpecialChars()
+		{
+			var randomizer = new Random();
+			var inventory = new Dictionary<string, int>
+			{
+				{ "EtsyVar7б¶“", randomizer.Next(1, 100) }
+			};
+
+			var exception = Assert.ThrowsAsync<MivaException>(() =>
+				_productsService.UpdateProductsQuantitiesBySkuAsync(inventory, CancellationToken.None));
+
+			Assert.That(exception, Is.Not.Null);
+			Assert.That(exception.Message.Contains("Invalid request signature"), Is.True);
 		}
 	}
 }
