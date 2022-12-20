@@ -1,39 +1,63 @@
-﻿using FluentAssertions;
-using MivaAccess.Services.Orders;
-using NUnit.Framework;
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentAssertions;
+using MivaAccess.Services.Orders;
+using MivaAccess.Shared;
+using NUnit.Framework;
 
 namespace MivaAccessTests
 {
-	[ TestFixture ]
+	[TestFixture]
 	public class OrderTests : BaseTest
 	{
 		private IMivaOrdersService _ordersService;
-		private string _ordersQueueName = "new_and_updated";
+		private const string OrdersQueueName = "new_and_updated";
 
-		[ SetUp ]
+		[SetUp]
 		public void Init()
 		{
-			this._ordersService = new MivaOrdersService( base.Config );
+			this._ordersService = new MivaOrdersService(base.Config);
 		}
 
-		[ Test ]
-		public async Task GetModifiedOrdersFromQueue()
+		[Test]
+		public async Task GetModifiedOrdersFromQueueAsync_ReturnsValidResult()
 		{
-			var orders = await this._ordersService.GetModifiedOrdersFromQueueAsync( _ordersQueueName, CancellationToken.None );
+			var orders = await this._ordersService.GetModifiedOrdersFromQueueAsync(OrdersQueueName, Mark.Blank(), CancellationToken.None);
+
 			orders.Should().NotBeNullOrEmpty();
 		}
 
-		[ Test ]
-		public void AcknowledgeOrder()
+		[Test]
+		public void AcknowledgeOrdersAsync_DoesNotThrowError_WhenIsOnlyOneOrder()
 		{
 			var orderId = 200100;
-			Assert.DoesNotThrow( () =>
+
+			Assert.DoesNotThrow(() =>
 			{
-				this._ordersService.AcknowledgeOrders( new long[] { orderId }, CancellationToken.None ).Wait();
-			} ); 
+				this._ordersService.AcknowledgeOrdersAsync(new long[] { orderId }, Mark.Blank(), CancellationToken.None).Wait();
+			});
+		}
+
+		[Test]
+		public void AcknowledgeOrdersAsync_DoesNotThrowError_WhenOrdersMoreThanBatchLimit()
+		{
+			var ordersIds = GenerateRandomOrderIds(MivaOrdersService.AcknowledgeOrdersBatchLimit + 5);
+
+			Assert.DoesNotThrow(() =>
+			{
+				this._ordersService.AcknowledgeOrdersAsync(ordersIds, Mark.Blank(), CancellationToken.None).Wait();
+			});
+		}
+
+		private static IEnumerable<long> GenerateRandomOrderIds(int number)
+		{
+			Random rnd = new Random();
+			for (int i = 0; i < number; i ++)
+			{
+				yield return (long)rnd.Next(-999999, -100000);
+			}
 		}
 	}
 }
