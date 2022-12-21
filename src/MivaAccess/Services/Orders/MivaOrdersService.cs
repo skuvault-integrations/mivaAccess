@@ -49,12 +49,12 @@ namespace MivaAccess.Services.Orders
 
 		public async Task AcknowledgeOrdersAsync(IEnumerable<long> ordersIds, Mark mark, CancellationToken cancellationToken)
 		{
-			var chunks = ordersIds.SplitInBatches(AcknowledgeOrdersBatchLimit);
-			foreach (var chunk in chunks)
+			var orderIdsPages = ordersIds.SplitInBatches(AcknowledgeOrdersBatchLimit);
+			foreach (var orderIdsPage in orderIdsPages)
 			{
 				LogIfCancellationTokenRequested(mark, cancellationToken);
 
-				var request = new AcknowledgeOrdersRequest(base.Config.Credentials, chunk);
+				var request = new AcknowledgeOrdersRequest(base.Config.Credentials, orderIdsPage);
 				var response = await base.PostAsync<MivaResponse>(request, cancellationToken, mark).ConfigureAwait(false);
 
 				if (response.Success == 0

@@ -21,6 +21,7 @@ namespace MivaAccessTests
 			this._ordersService = new MivaOrdersService(base.Config);
 		}
 
+		[Explicit]
 		[Test]
 		public async Task GetModifiedOrdersFromQueueAsync_ReturnsValidResult()
 		{
@@ -29,6 +30,7 @@ namespace MivaAccessTests
 			orders.Should().NotBeNullOrEmpty();
 		}
 
+		[Explicit]
 		[Test]
 		public void AcknowledgeOrdersAsync_DoesNotThrowError_WhenIsOnlyOneOrder()
 		{
@@ -40,6 +42,7 @@ namespace MivaAccessTests
 			});
 		}
 
+		[Explicit]
 		[Test]
 		public void AcknowledgeOrdersAsync_DoesNotThrowError_WhenOrdersMoreThanBatchLimit()
 		{
